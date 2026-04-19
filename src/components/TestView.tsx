@@ -6,7 +6,7 @@ interface TestViewProps {
   totalQuestions: number;
   progressPct: number;
   options: string[];
-  onSelect: (value: string) => void;
+  onSelect: (label: string, value: string) => void;
   isProcessing: boolean;
 }
 
@@ -39,33 +39,48 @@ export function TestView({
                 </div>
               </div>
 
-              <div className="progress modern-progress mb-4" role="progressbar">
+              <p className="test-instruction">
+                最も近い意味を選んでください。選択するとすぐ次の問題へ進みます。
+              </p>
+
+              <div
+                className="progress modern-progress mb-4"
+                role="progressbar"
+                aria-label="テストの進行状況"
+                aria-valuenow={progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
                 <div
                   className="progress-bar"
                   style={{ width: `${progressPct}%` }}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
                 >
                   {progressPct}%
                 </div>
               </div>
 
               <div className="question-panel text-center">
+                <p className="question-label">単語</p>
                 <h2 className="question-word">{item.Item}</h2>
               </div>
 
               <div className="option-grid mt-5">
-                {options.map((option, idx) => (
-                  <button
-                    key={`${item.id}-${idx}-${option}`}
-                    type="button"
-                    className="option-button"
-                    onClick={() => onSelect(option)}
-                    disabled={isProcessing}
-                  >
-                    <span>{option}</span>
-                  </button>
-                ))}
+                {options.map((option, idx) => {
+                  const labelText = String.fromCharCode(65 + idx);
+                  return (
+                    <button
+                      key={`${item.id}-${idx}-${option}`}
+                      type="button"
+                      className="option-button"
+                      onClick={() => onSelect(labelText, option)}
+                      disabled={isProcessing}
+                      aria-label={`選択肢${labelText}: ${option}`}
+                    >
+                      <span className="option-letter">{labelText}</span>
+                      <span>{option}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
