@@ -516,9 +516,12 @@
             <span class="status done">ENG-001 complete</span>
             <span class="status done">PSY-001 complete</span>
             <span class="status done">PSY-002/003 complete</span>
+            <span class="status done">CAT-001 complete</span>
+            <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
-              Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間を実装済み。次は再現可能なMonte Carlo基盤を構築する。得点式の本番切替はまだ行わない。
+              Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
+              <code>confirmation-v1</code>では7候補すべてが不合格だったため、CAT設計を再検討する。得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -734,7 +737,7 @@
             <div class="phase-body">
               <h3>CAT設計とMonte Carlo選定</h3>
               <div class="phase-meta">
-                <span class="status planned">計画済み</span>
+                <span class="status active">実行中・初回確認不合格</span>
                 <span class="mini">Phase 1必須</span>
               </div>
               <ul class="checklist">
@@ -877,6 +880,23 @@
           各セルの反復数、seed、乱数生成器、項目バンクhash、コードcommit、実行環境、除外基準をmanifestへ保存する。
           結果を見てから閾値を変更した場合は探索と確認を分け、独立条件で再評価する。
         </p>
+        <div class="grid" style="margin-top: 1rem">
+          <article class="card full">
+            <span class="status blocker">confirmation-v1: 0 / 7 passed</span>
+            <h3>初回確認シミュレーションの判定</h3>
+            <p>
+              15のtheta条件、各5,000反復、7候補（計525,000 CAT）を固定済み基準で評価した。
+              現行型MFIは最大項目露出率<code>.583</code>、露出を抑えたfixed20/randomesque20は
+              theta <code>-3.5</code>でbias <code>.572</code>・95%被覆率<code>.752</code>となり、
+              精度・負担・露出を同時に満たす候補はなかった。
+            </p>
+            <p>
+              <a href="../simulation/results/confirmation-v1-summary.md">結果要約</a> /
+              <a href="../simulation/decision-criteria-v1.md">事前固定した判定基準</a> /
+              <a href="../simulation/results/confirmation-v1-evaluation.json">機械判定JSON</a>
+            </p>
+          </article>
+        </div>
       </section>
 
       <section id="gates">
@@ -986,16 +1006,16 @@
               </tr>
               <tr>
                 <td>CAT-001</td>
-                <td><span class="status blocker">P0</span></td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
                 <td>再現可能なMonte Carlo harness</td>
-                <td>manifest＋集計表</td>
+                <td>manifest＋MCSE付き集計表＋機械判定</td>
                 <td>ENG-001/PSY-002</td>
               </tr>
               <tr>
                 <td>CAT-002</td>
-                <td><span class="status major">P1</span></td>
+                <td><span class="status major">P1</span> <span class="status active">再設計中</span></td>
                 <td>内容制約・露出制御候補を比較</td>
-                <td>設計選定レポート</td>
+                <td>初回7候補は全不合格。端点情報・推定法・直接露出制御を再設計</td>
                 <td>CAT-001</td>
               </tr>
               <tr>
