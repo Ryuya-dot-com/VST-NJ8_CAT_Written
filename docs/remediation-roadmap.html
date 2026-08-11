@@ -518,6 +518,8 @@
             <span class="status done">PSY-002/003 complete</span>
             <span class="status done">CAT-001 complete</span>
             <span class="status done">CAT-002 bank diagnosis complete</span>
+            <span class="status done">CAT-002 estimator sensitivity complete</span>
+            <span class="status active">CAT-002 exposure/range redesign</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
@@ -909,6 +911,24 @@
             <p>
               <a href="../simulation/results/bank-diagnostic-v1-summary.md">項目バンク診断要約</a> /
               <a href="../simulation/results/bank-diagnostic-v1.json">完全な診断JSON</a>
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">exploratory estimator sensitivity complete</span>
+            <h3>推定法感度分析の契約</h3>
+            <p>
+              EAP（標準偏差1・2の正規事前分布）、MAP、bounded MLE、Warm WLEを候補として実装し、
+              独立base R計算と混合・全正答・全誤答パターンで照合した。Warm WLEは
+              <code>log L(theta) + 0.5 log I(theta)</code>を直接最大化し、簡略近似は用いない。
+              全正答・全誤答のbounded MLEが境界に達することも明示的に記録する。
+            </p>
+            <p>
+              同一の項目・反応経路15,000本で感度分析した結果、bounded MLEは最大33%が境界に達した。
+              Warm WLEは最大絶対biasが20問で<code>.132</code>、30問で<code>.095</code>と小さかったが、
+              低端RMSEはそれぞれ<code>.507</code>、<code>.461</code>であり採用確定には至らない。
+              <a href="../docs/adr/0002-estimator-candidates.md">推定法候補ADR</a> /
+              <a href="../simulation/results/estimator-sensitivity-exploratory-v1-summary.md">感度分析要約</a>。
+              次は直接露出制御と測定範囲判定を設計する。
             </p>
           </article>
         </div>
