@@ -515,9 +515,10 @@
             <span class="status active">Phase 0 active</span>
             <span class="status done">ENG-001 complete</span>
             <span class="status done">PSY-001 complete</span>
+            <span class="status done">PSY-002/003 complete</span>
             <h3>現在の作業</h3>
             <p>
-              Git管理、現行fixture、CI、両版のパリティ検査、estimandのADRを実装済み。次は原論文互換の参照3PL実装を行う。得点式の即時置換は行わない。
+              Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間を実装済み。次は再現可能なMonte Carlo基盤を構築する。得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -971,14 +972,14 @@
               </tr>
               <tr>
                 <td>PSY-002</td>
-                <td><span class="status blocker">P0</span></td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
                 <td>D=1.702を含む3PL参照実装</td>
-                <td>独立fixture・式検証</td>
+                <td>base R独立fixture・式検証</td>
                 <td>ENG-001</td>
               </tr>
               <tr>
                 <td>PSY-003</td>
-                <td><span class="status major">P1</span></td>
+                <td><span class="status major">P1</span> <span class="status done">完了</span></td>
                 <td>語彙数事後分布と区間推定</td>
                 <td>点推定＋95%区間</td>
                 <td>PSY-001/002</td>
