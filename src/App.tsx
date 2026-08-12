@@ -1,17 +1,63 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { utils, writeFile } from "xlsx";
 import "./App.css";
 import { LandingView } from "./components/LandingView";
 import { ResultsView } from "./components/ResultsView";
 import { TestView } from "./components/TestView";
 import type { Item } from "./types";
-import { estimateAbilityEap, selectNextItem, vocabFromTheta } from "./utils/cat";
 import { loadItemBank } from "./utils/data";
+import { estimatePaperPosteriorEap } from "./utils/paperScoring";
 import { shuffleArray } from "./utils/random";
+import {
+  RESEARCH_ADMINISTRATION_AUDIT_FIELDS,
+  RESEARCH_ADMINISTRATION_POLICY,
+  buildResearchAdministrationAudit,
+  createResearchAdministrationRandom,
+  createResearchAdministrationSeed,
+  selectInitialResearchItem,
+  selectNextResearchItem,
+  shouldContinueResearchAdministration,
+  type ResearchStopReason,
+} from "./utils/researchAdministrationPolicy";
+import {
+  PUBLIC_OBSERVED_RESULT_FIELDS,
+  assertPublicResultFieldsAllowed,
+  buildPublicObservedResult,
+} from "./utils/scoreReportingPolicy";
 
-const TOTAL_ITEMS = 30;
+const TOTAL_ITEMS = RESEARCH_ADMINISTRATION_POLICY.fixedLength;
 const TEST_LABEL = "筆記版";
 type DownloadStatus = "idle" | "success" | "error";
+
+const PUBLIC_SUMMARY_FIELDS = Object.freeze([
+  ...PUBLIC_OBSERVED_RESULT_FIELDS,
+  ...RESEARCH_ADMINISTRATION_AUDIT_FIELDS,
+  "総回答時間（秒）",
+  "平均回答時間（秒）",
+  "A選択数",
+  "B選択数",
+  "C選択数",
+  "D選択数",
+]);
+
+const PUBLIC_RESPONSE_FIELDS = Object.freeze([
+  "問題番号",
+  "項目ID",
+  "単語",
+  "品詞",
+  "レベル",
+  "選択ラベル",
+  "選択回答",
+  "正答",
+  "正誤",
+  "回答値",
+  "回答時刻",
+  "回答時間（秒）",
+  "選択肢A",
+  "選択肢B",
+  "選択肢C",
+  "選択肢D",
+]);
 
 interface ResultSnapshot {
   administered: number[];
@@ -21,8 +67,8 @@ interface ResultSnapshot {
   optionOrders: string[][];
   responseTimes: number[];
   answerTimestamps: string[];
-  theta: number;
-  se: number;
+  administrationSeed: number;
+  stopReason: ResearchStopReason;
   testStartedAtMs: number | null;
   testEndedAtMs: number | null;
 }
@@ -53,20 +99,6 @@ function countSelectedLabels(labels: string[]) {
   };
 }
 
-function pickInitialItemIndex(itemBank: Item[]): number | null {
-  const candidates = itemBank
-    .map((item, idx) => ({ item, idx }))
-    .filter(({ item }) => item.Level >= 3 && item.Level <= 5);
-
-  if (candidates.length === 0) {
-    return itemBank.length > 0 ? 0 : null;
-  }
-
-  const randomCandidate =
-    candidates[Math.floor(Math.random() * candidates.length)];
-  return randomCandidate?.idx ?? null;
-}
-
 function App() {
   const [itemBank, setItemBank] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,14 +113,15 @@ function App() {
   const [optionOrders, setOptionOrders] = useState<string[][]>([]);
   const [responseTimes, setResponseTimes] = useState<number[]>([]);
   const [answerTimestamps, setAnswerTimestamps] = useState<string[]>([]);
-  const [theta, setTheta] = useState(0);
-  const [se, setSe] = useState(Number.POSITIVE_INFINITY);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [questionStartMs, setQuestionStartMs] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>("idle");
   const [testStartedAtMs, setTestStartedAtMs] = useState<number | null>(null);
   const [testEndedAtMs, setTestEndedAtMs] = useState<number | null>(null);
+  const [administrationSeed, setAdministrationSeed] = useState<number | null>(null);
+  const [stopReason, setStopReason] = useState<ResearchStopReason | null>(null);
+  const selectionRandomRef = useRef<(() => number) | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -156,19 +189,16 @@ function App() {
   const correctAnswers = responses.reduce<number>((acc, value) => acc + value, 0);
   const accuracy =
     responses.length > 0 ? (correctAnswers / responses.length) * 100 : 0;
-  const vocabSize = vocabFromTheta(theta);
-
   const handleStart = () => {
     if (loading || itemBank.length === 0) {
       return;
     }
-    const initialIndex = pickInitialItemIndex(itemBank);
-    if (initialIndex === null) {
-      setError("No items available to start the test.");
-      return;
-    }
+    const seed = createResearchAdministrationSeed();
+    const selectionRandom = createResearchAdministrationRandom(seed);
+    const initialIndex = selectInitialResearchItem(itemBank, selectionRandom);
 
     const startedAt = Date.now();
+    selectionRandomRef.current = selectionRandom;
     setStarted(true);
     setDone(false);
     setAdministered([]);
@@ -178,13 +208,13 @@ function App() {
     setOptionOrders([]);
     setResponseTimes([]);
     setAnswerTimestamps([]);
-    setTheta(0);
-    setSe(Number.POSITIVE_INFINITY);
     setCurrentIndex(initialIndex);
     setQuestionStartMs(startedAt);
     setDownloadStatus("idle");
     setTestStartedAtMs(startedAt);
     setTestEndedAtMs(null);
+    setAdministrationSeed(seed);
+    setStopReason(null);
   };
 
   const handleAnswer = (selectedLabel: string, option: string) => {
@@ -193,7 +223,9 @@ function App() {
       currentIndex === null ||
       done ||
       isProcessing ||
-      questionStartMs === null
+      questionStartMs === null ||
+      administrationSeed === null ||
+      selectionRandomRef.current === null
     ) {
       return;
     }
@@ -222,45 +254,39 @@ function App() {
     setResponseTimes(nextTimes);
     setAnswerTimestamps(nextAnswerTimestamps);
 
-    const estimate = estimateAbilityEap(
+    const estimate = estimatePaperPosteriorEap(
       itemBank,
       nextAdministered,
       nextResponses
     );
-    setTheta(estimate.theta);
-    setSe(estimate.se);
-
-    const highCount = nextAdministered.filter(
-      (idx) => itemBank[idx]?.Level >= 7
-    ).length;
-    const needHigh = highCount < 2;
-    const shouldContinue =
-      (estimate.se > 0.4 || nextAdministered.length < 20 || needHigh) &&
-      nextAdministered.length < TOTAL_ITEMS;
-
-    const nextSnapshot: ResultSnapshot = {
-      administered: nextAdministered,
-      responses: nextResponses,
-      selectedLabels: nextSelectedLabels,
-      selectedAnswers: nextSelectedAnswers,
-      optionOrders: nextOptionOrders,
-      responseTimes: nextTimes,
-      answerTimestamps: nextAnswerTimestamps,
-      theta: estimate.theta,
-      se: estimate.se,
-      testStartedAtMs,
-      testEndedAtMs: now,
-    };
+    const shouldContinue = shouldContinueResearchAdministration(
+      nextAdministered.length
+    );
 
     if (shouldContinue) {
-      const nextIndex = selectNextItem(
+      const nextIndex = selectNextResearchItem(
         itemBank,
         estimate.theta,
         nextAdministered,
-        needHigh
+        selectionRandomRef.current
       );
       if (nextIndex === null) {
+        const finalStopReason: ResearchStopReason = "item-bank-exhausted";
+        const nextSnapshot: ResultSnapshot = {
+          administered: nextAdministered,
+          responses: nextResponses,
+          selectedLabels: nextSelectedLabels,
+          selectedAnswers: nextSelectedAnswers,
+          optionOrders: nextOptionOrders,
+          responseTimes: nextTimes,
+          answerTimestamps: nextAnswerTimestamps,
+          administrationSeed,
+          stopReason: finalStopReason,
+          testStartedAtMs,
+          testEndedAtMs: now,
+        };
         setDone(true);
+        setStopReason(finalStopReason);
         setTestEndedAtMs(now);
         setCurrentIndex(null);
         setQuestionStartMs(null);
@@ -270,7 +296,22 @@ function App() {
         setQuestionStartMs(Date.now());
       }
     } else {
+      const finalStopReason: ResearchStopReason = "fixed-length";
+      const nextSnapshot: ResultSnapshot = {
+        administered: nextAdministered,
+        responses: nextResponses,
+        selectedLabels: nextSelectedLabels,
+        selectedAnswers: nextSelectedAnswers,
+        optionOrders: nextOptionOrders,
+        responseTimes: nextTimes,
+        answerTimestamps: nextAnswerTimestamps,
+        administrationSeed,
+        stopReason: finalStopReason,
+        testStartedAtMs,
+        testEndedAtMs: now,
+      };
       setDone(true);
+      setStopReason(finalStopReason);
       setTestEndedAtMs(now);
       setCurrentIndex(null);
       setQuestionStartMs(null);
@@ -289,7 +330,6 @@ function App() {
       snapshot.responses.length > 0
         ? (snapshotCorrectAnswers / snapshot.responses.length) * 100
         : 0;
-    const snapshotVocabSize = vocabFromTheta(snapshot.theta);
     const snapshotTotalTimeSeconds = snapshot.responseTimes.reduce(
       (acc, value) => acc + value,
       0
@@ -328,20 +368,23 @@ function App() {
 
     const summarySheet = [
       {
-        テスト形式: TEST_LABEL,
-        受験者氏名: userName,
-        開始日時: snapshot.testStartedAtMs
-          ? new Date(snapshot.testStartedAtMs).toLocaleString("ja-JP")
-          : "",
-        終了日時: snapshot.testEndedAtMs
-          ? new Date(snapshot.testEndedAtMs).toLocaleString("ja-JP")
-          : createdAt.toLocaleString("ja-JP"),
-        "能力値θ": roundFinite(snapshot.theta, 4),
-        標準誤差: roundFinite(snapshot.se, 4),
-        推定語彙サイズ: Math.round(snapshotVocabSize),
-        総問題数: snapshot.administered.length,
-        正答数: snapshotCorrectAnswers,
-        "正答率（%）": roundFinite(snapshotAccuracy, 1),
+        ...buildPublicObservedResult({
+          testLabel: TEST_LABEL,
+          userName,
+          startedAt: snapshot.testStartedAtMs
+            ? new Date(snapshot.testStartedAtMs).toLocaleString("ja-JP")
+            : "",
+          endedAt: snapshot.testEndedAtMs
+            ? new Date(snapshot.testEndedAtMs).toLocaleString("ja-JP")
+            : createdAt.toLocaleString("ja-JP"),
+          administeredItems: snapshot.administered.length,
+          correctAnswers: snapshotCorrectAnswers,
+          accuracyPercent: roundFinite(snapshotAccuracy, 1),
+        }),
+        ...buildResearchAdministrationAudit(
+          snapshot.administrationSeed,
+          snapshot.stopReason
+        ),
         "総回答時間（秒）": roundFinite(snapshotTotalTimeSeconds, 2),
         "平均回答時間（秒）": roundFinite(snapshotAverageTimeSeconds, 2),
         A選択数: selectedLabelCounts.A,
@@ -350,6 +393,8 @@ function App() {
         D選択数: selectedLabelCounts.D,
       },
     ];
+    assertPublicResultFieldsAllowed(summarySheet, PUBLIC_SUMMARY_FIELDS);
+    assertPublicResultFieldsAllowed(responsesSheet, PUBLIC_RESPONSE_FIELDS);
 
     try {
       const workbook = utils.book_new();
@@ -404,6 +449,10 @@ function App() {
   };
 
   const handleDownload = () => {
+    if (administrationSeed === null || stopReason === null) {
+      setDownloadStatus("error");
+      return;
+    }
     downloadResultWorkbook({
       administered,
       responses,
@@ -412,8 +461,8 @@ function App() {
       optionOrders,
       responseTimes,
       answerTimestamps,
-      theta,
-      se,
+      administrationSeed,
+      stopReason,
       testStartedAtMs,
       testEndedAtMs,
     });
@@ -429,14 +478,15 @@ function App() {
     setOptionOrders([]);
     setResponseTimes([]);
     setAnswerTimestamps([]);
-    setTheta(0);
-    setSe(Number.POSITIVE_INFINITY);
     setCurrentIndex(null);
     setQuestionStartMs(null);
     setIsProcessing(false);
     setDownloadStatus("idle");
     setTestStartedAtMs(null);
     setTestEndedAtMs(null);
+    setAdministrationSeed(null);
+    setStopReason(null);
+    selectionRandomRef.current = null;
   };
 
   if (!started) {
@@ -455,9 +505,6 @@ function App() {
     return (
       <ResultsView
         userName={userName}
-        theta={theta}
-        se={se}
-        vocabSize={Math.round(vocabSize)}
         totalItems={administered.length}
         correctAnswers={correctAnswers}
         accuracy={Math.round(accuracy * 10) / 10}

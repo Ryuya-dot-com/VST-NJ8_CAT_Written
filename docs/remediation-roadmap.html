@@ -1,0 +1,1279 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="VST-NJ8 CAT筆記版・音声版の心理測定、CATアルゴリズム、実装、妥当化を修正するための統合ロードマップ"
+    />
+    <title>VST-NJ8 CAT 修正ロードマップ</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16221d;
+        --muted: #5b6962;
+        --paper: #f5f1e8;
+        --surface: #fffdf7;
+        --line: #d9d2c3;
+        --green: #155f4a;
+        --green-dark: #0e4637;
+        --green-soft: #dcece5;
+        --amber: #a95d17;
+        --amber-soft: #faead7;
+        --red: #9a332c;
+        --red-soft: #f5dfdb;
+        --blue: #2e5d83;
+        --blue-soft: #dfeaf2;
+        --shadow: 0 18px 45px rgba(41, 48, 43, 0.1);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top right, rgba(21, 95, 74, 0.12), transparent 30rem),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, "Hiragino Sans", "Yu Gothic", "YuGothic", Meiryo, system-ui, sans-serif;
+        line-height: 1.72;
+      }
+
+      a {
+        color: var(--green-dark);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+      }
+
+      a:hover {
+        color: var(--amber);
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 0.35rem;
+        background: #f1ede4;
+        padding: 0.1rem 0.35rem;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.9em;
+      }
+
+      .hero {
+        border-bottom: 1px solid rgba(21, 95, 74, 0.28);
+        background: linear-gradient(135deg, #0f4538 0%, #17694f 62%, #9e6428 150%);
+        color: #fffdf7;
+      }
+
+      .hero-inner,
+      main,
+      footer {
+        width: min(1160px, calc(100% - 2rem));
+        margin-inline: auto;
+      }
+
+      .hero-inner {
+        padding: 4.5rem 0 3.7rem;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.8rem;
+        color: #cfe8dd;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.28;
+      }
+
+      h1 {
+        max-width: 850px;
+        margin: 0;
+        font-size: clamp(2.2rem, 5vw, 4.4rem);
+        letter-spacing: -0.045em;
+      }
+
+      .lead {
+        max-width: 820px;
+        margin: 1.35rem 0 0;
+        color: #e5f1eb;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+      }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1.8rem;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+        padding: 0.42rem 0.75rem;
+        font-size: 0.86rem;
+      }
+
+      .chip::before {
+        width: 0.48rem;
+        height: 0.48rem;
+        border-radius: 50%;
+        background: #f2be69;
+        content: "";
+      }
+
+      main {
+        padding: 2rem 0 5rem;
+      }
+
+      .toc {
+        position: sticky;
+        z-index: 10;
+        top: 0.75rem;
+        display: flex;
+        overflow-x: auto;
+        gap: 0.4rem;
+        margin: 0 0 2rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 253, 247, 0.92);
+        box-shadow: 0 8px 28px rgba(41, 48, 43, 0.08);
+        padding: 0.45rem;
+        backdrop-filter: blur(12px);
+      }
+
+      .toc a {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 0.45rem 0.7rem;
+        color: var(--ink);
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .toc a:hover {
+        background: var(--green-soft);
+      }
+
+      section {
+        scroll-margin-top: 5rem;
+        margin-top: 3.5rem;
+      }
+
+      section > h2 {
+        margin: 0 0 1.2rem;
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+        letter-spacing: -0.025em;
+      }
+
+      .section-kicker {
+        margin: 0 0 0.25rem;
+        color: var(--green);
+        font-size: 0.78rem;
+        font-weight: 850;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .card {
+        grid-column: span 4;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        padding: 1.35rem;
+      }
+
+      .card.wide {
+        grid-column: span 8;
+      }
+
+      .card.full {
+        grid-column: 1 / -1;
+      }
+
+      .card h3 {
+        margin: 0 0 0.55rem;
+        font-size: 1.12rem;
+      }
+
+      .card p:last-child,
+      .card ul:last-child {
+        margin-bottom: 0;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.76rem;
+        font-weight: 850;
+      }
+
+      .status.blocker {
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .status.major {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .status.planned {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .status.active,
+      .status.done {
+        background: var(--green-soft);
+        color: var(--green-dark);
+      }
+
+      .callout {
+        border-left: 5px solid var(--green);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        background: var(--green-soft);
+        padding: 1.2rem 1.35rem;
+      }
+
+      .callout strong {
+        color: var(--green-dark);
+      }
+
+      .risk-list,
+      .checklist,
+      .compact-list {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+
+      .risk-list li,
+      .checklist li,
+      .compact-list li {
+        margin: 0.45rem 0;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .phase {
+        display: grid;
+        grid-template-columns: 7.5rem 1fr;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .phase-label {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #e6eee8;
+        padding: 1.25rem;
+      }
+
+      .phase-label strong {
+        color: var(--green-dark);
+        font-size: 1.8rem;
+      }
+
+      .phase-label span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .phase-body {
+        padding: 1.3rem 1.45rem;
+      }
+
+      .phase-body h3 {
+        margin: 0 0 0.4rem;
+      }
+
+      .phase-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin: 0.75rem 0;
+      }
+
+      .mini {
+        border-radius: 999px;
+        background: #f0ece3;
+        padding: 0.22rem 0.55rem;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 750;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 0.85rem 0.9rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #ece7dc;
+        color: var(--green-dark);
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      details {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface);
+        padding: 0.85rem 1rem;
+      }
+
+      details + details {
+        margin-top: 0.7rem;
+      }
+
+      summary {
+        cursor: pointer;
+        color: var(--green-dark);
+        font-weight: 800;
+      }
+
+      .equation {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #f3efe6;
+        padding: 0.9rem 1rem;
+        font-family: "STIX Two Text", "Times New Roman", serif;
+        font-size: 1.03rem;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 2rem 0 3rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 850px) {
+        .card,
+        .card.wide {
+          grid-column: 1 / -1;
+        }
+
+        .phase {
+          grid-template-columns: 1fr;
+        }
+
+        .phase-label {
+          flex-direction: row;
+          align-items: center;
+        }
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          font-size: 10.5pt;
+        }
+
+        .hero {
+          background: #fff;
+          color: #000;
+        }
+
+        .hero-inner {
+          padding: 1rem 0;
+        }
+
+        .lead,
+        .eyebrow {
+          color: #222;
+        }
+
+        .chip {
+          border-color: #aaa;
+        }
+
+        .toc {
+          display: none;
+        }
+
+        .card,
+        .phase,
+        .table-wrap {
+          break-inside: avoid;
+          box-shadow: none;
+        }
+
+        section {
+          margin-top: 1.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="eyebrow">Psychometric remediation programme</p>
+        <h1>VST-NJ8 CAT<br />統合修正ロードマップ</h1>
+        <p class="lead">
+          筆記版と音声版を、再現可能で監査可能なCAT実装へ改修する。数式の忠実性だけでなく、
+          「8,000語中の既知語数」という解釈、停止規則、内容代表性、モード等価性までを段階的に検証する。
+        </p>
+        <div class="meta-row">
+          <span class="chip">文書版 0.5</span>
+          <span class="chip">作成日 2026-08-12</span>
+          <span class="chip">状態: 数値報告の内側範囲を再設計中</span>
+          <span class="chip">正本: Written / docs</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <nav class="toc" aria-label="ページ内ナビゲーション">
+        <a href="#decision">判定</a>
+        <a href="#baseline">現状</a>
+        <a href="#git">Git管理</a>
+        <a href="#principles">原則</a>
+        <a href="#roadmap">工程</a>
+        <a href="#simulation">シミュレーション</a>
+        <a href="#gates">ゲート</a>
+        <a href="#backlog">初期チケット</a>
+      </nav>
+
+      <section id="decision">
+        <p class="section-kicker">Executive decision</p>
+        <h2>現状の利用判定</h2>
+        <div class="grid">
+          <article class="card">
+            <span class="status major">Major revision</span>
+            <h3>筆記版</h3>
+            <p>
+              UIプロトタイプとしては継続可能。現行の整数語彙サイズは、数理仕様と妥当化が完了するまで研究上の確定得点として扱わない。
+            </p>
+          </article>
+          <article class="card">
+            <span class="status blocker">Release blocker</span>
+            <h3>音声版</h3>
+            <p>
+              音声提示の実装修正と別個の項目校正・モード等価性検証が完了するまで、心理測定尺度として公開しない。
+            </p>
+          </article>
+          <article class="card">
+            <span class="status active">Phase 0 active</span>
+            <span class="status done">ENG-001 complete</span>
+            <span class="status done">PSY-001 complete</span>
+            <span class="status done">PSY-002/003 complete</span>
+            <span class="status done">CAT-001 complete</span>
+            <span class="status done">CAT-002 bank diagnosis complete</span>
+            <span class="status done">CAT-002 estimator sensitivity complete</span>
+            <span class="status done">CAT-002 unconditional exposure study complete</span>
+            <span class="status done">CAT-002 information-support range complete</span>
+            <span class="status done">CAT-002 range-reporting exploration complete</span>
+            <span class="status done">CAT-002 interval calibration complete</span>
+            <span class="status done">CAT-002 selective calibration complete</span>
+            <span class="status active">CAT-002 operational core next</span>
+            <span class="status done">AUD-001 stimulus protocol fixed</span>
+            <span class="status blocker">G2 not passed</span>
+            <h3>現在の作業</h3>
+            <p>
+              Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
+              <code>confirmation-v1</code>では7候補すべてが不合格だった。全項目バンクの情報支持範囲を独立実装で確定したが、
+              20項目CATの数値報告範囲とはみなさない。範囲報告36候補、区間校正10候補、選択的報告候補も固定基準で不合格だったため、
+              次に情報支持範囲より内側の運用数値報告範囲を再設計する。得点式の本番切替はまだ行わない。
+            </p>
+          </article>
+        </div>
+        <p class="callout">
+          <strong>最重要方針:</strong>
+          「原論文の期待正答数」「非当て推量成分に基づく既知語数」「現行互換値」を同じ名称で混在させない。
+          推定対象を決定し、得点方式を明示的にバージョン化する。
+        </p>
+      </section>
+
+      <section id="baseline">
+        <p class="section-kicker">Audited baseline</p>
+        <h2>凍結する現行ベースライン</h2>
+        <div class="grid">
+          <article class="card wide">
+            <h3>対象リポジトリ</h3>
+            <ul class="compact-list">
+              <li>
+                <a href="https://github.com/Ryuya-dot-com/VST-NJ8_CAT_Written/tree/e4a7eb6be719338fc982133c03b2828ebfbbcb03">
+                  VST-NJ8_CAT_Written @ e4a7eb6
+                </a>
+              </li>
+              <li>
+                <a href="https://github.com/Ryuya-dot-com/VST-NJ8_CAT_Audio/tree/ea21c5674648383a349c7b94a2b351b367bfb5ea">
+                  VST-NJ8_CAT_Audio @ ea21c56
+                </a>
+              </li>
+              <li>両版のCATコアと160項目CSVは現時点で同一。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>現行停止規則</h3>
+            <p><code>min=20</code>、<code>SE≤0.40</code>、Level 7–8を2問、<code>max=30</code>。</p>
+          </article>
+          <article class="card">
+            <h3>数理ブロッカー</h3>
+            <ul class="risk-list">
+              <li>原論文の尺度係数1.702が欠落</li>
+              <li>語彙換算が平均困難度のみ</li>
+              <li><code>V(E[θ])</code>を使用</li>
+              <li>語彙数の区間推定がない</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>CATブロッカー</h3>
+            <ul class="risk-list">
+              <li>停止閾値の根拠シミュレーションなし</li>
+              <li>内容バランスがLevel 7–8の2問のみ</li>
+              <li>露出制御なし</li>
+              <li>実質20問固定に近い</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>音声版ブロッカー</h3>
+            <ul class="risk-list">
+              <li>日本語問題語の音声パスが生成されない</li>
+              <li>英語音声フォールバックで日本語を読む</li>
+              <li>筆記校正値をそのまま流用</li>
+              <li>再生回数無制限の影響未検証</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="git">
+        <p class="section-kicker">Repository governance</p>
+        <h2>Git管理方針</h2>
+        <div class="grid">
+          <article class="card wide">
+            <h3>当面のリポジトリ境界</h3>
+            <p>
+              既存の2リポジトリは、公開履歴とデプロイを壊さないため当面維持する。ロードマップの正本は筆記版の
+              <code>docs/remediation-roadmap.html</code>とし、音声版は正本への案内のみを保持する。
+            </p>
+            <p>
+              Phase 1で心理測定コアを独立モジュール化し、同じ数式・設定・テストを両版が参照できる形へ移行する。
+              モノレポ化の是非は、その移行コストを確認してから決定する。
+            </p>
+          </article>
+          <article class="card">
+            <h3>現在のブランチ</h3>
+            <p><code>remediation/roadmap</code></p>
+            <p>両リポジトリに同名で作成し、既存の未コミットファイルには触れない。</p>
+          </article>
+          <article class="card">
+            <h3>ブランチ命名</h3>
+            <ul class="compact-list">
+              <li><code>docs/*</code> 仕様・技術報告</li>
+              <li><code>test/*</code> 数値回帰・シミュレーション</li>
+              <li><code>fix/*</code> 数式・不具合修正</li>
+              <li><code>feat/*</code> 区間推定・新機能</li>
+              <li><code>refactor/*</code> 共通コア化</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>コミット規約</h3>
+            <ul class="compact-list">
+              <li>1コミット1論点</li>
+              <li>数式変更とUI変更を分離</li>
+              <li>得点変更には固定fixtureを添付</li>
+              <li>生成物とソースを同一視しない</li>
+              <li>パラメータ出典と変換履歴を記録</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>PR必須情報</h3>
+            <ul class="compact-list">
+              <li>推定対象・影響する得点バージョン</li>
+              <li>変更前後の数値fixture</li>
+              <li>シミュレーション条件とseed</li>
+              <li>筆記版・音声版への影響</li>
+              <li>移行・後方互換・ロールバック方法</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>保護ルール</h3>
+            <ul class="compact-list">
+              <li><code>main</code>へ直接コミットしない</li>
+              <li>force pushを禁止</li>
+              <li>CI成功とレビューを必須化</li>
+              <li>得点fixture差分を承認対象にする</li>
+              <li>リリースは署名付きタグで固定</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="principles">
+        <p class="section-kicker">Design contract</p>
+        <h2>修正を支配する6原則</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>1. 推定対象を先に決める</h3>
+            <p>θ、期待正答数、既知語数を区別し、利用目的と損失関数を明文化する。</p>
+          </article>
+          <article class="card">
+            <h3>2. 数式を版管理する</h3>
+            <p><code>score_model_id</code>、係数D、事前分布、項目バンク版を結果へ保存する。</p>
+          </article>
+          <article class="card">
+            <h3>3. 不確実性を報告する</h3>
+            <p>1語単位の点推定ではなく、事後平均・中央値・95%区間を用途に応じて示す。</p>
+          </article>
+          <article class="card">
+            <h3>4. シミュレーションを再現可能にする</h3>
+            <p>条件、乱数生成器、seed、項目バンク論理・成果物hash、コードcommitを成果物へ残し、連続値は版付き数値比較契約で再計算する。</p>
+          </article>
+          <article class="card">
+            <h3>5. モデル内精度と妥当性を分ける</h3>
+            <p>Monte Carlo性能だけで「語彙サイズとして妥当」と結論しない。実データで検証する。</p>
+          </article>
+          <article class="card">
+            <h3>6. 音声版を別モードとして扱う</h3>
+            <p>筆記版の値を無条件に流用せず、仕様固定、校正、DIF・モード等価性を確認する。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="roadmap">
+        <p class="section-kicker">Phased delivery</p>
+        <h2>修正工程と出口条件</h2>
+        <div class="timeline">
+          <article class="phase">
+            <div class="phase-label">
+              <strong>0</strong>
+              <span>ACTIVE</span>
+            </div>
+            <div class="phase-body">
+              <h3>ガバナンス・再現性の確立</h3>
+              <div class="phase-meta">
+                <span class="status active">進行中</span>
+                <span class="mini">依存なし</span>
+                <span class="mini">得点変更なし</span>
+              </div>
+              <ul class="checklist">
+                <li>本ロードマップ、Git規約、リスク台帳を正本化する。</li>
+                <li>現行得点を固定fixture化し、意図しない変更を検知する。</li>
+                <li>数式・停止規則・パラメータ由来を機械可読設定へ移す。</li>
+                <li>テスト基盤とCIを追加し、依存物・生成物の追跡方針を整理する。</li>
+              </ul>
+              <p><strong>出口:</strong> 現行動作を再現する自動テストと、全設定の出典がレビュー可能。</p>
+            </div>
+          </article>
+
+          <article class="phase">
+            <div class="phase-label">
+              <strong>1</strong>
+              <span>MATH</span>
+            </div>
+            <div class="phase-body">
+              <h3>心理測定コアの数理修正</h3>
+              <div class="phase-meta">
+                <span class="status planned">計画済み</span>
+                <span class="mini">Phase 0必須</span>
+                <span class="mini">破壊的得点変更</span>
+              </div>
+              <ul class="checklist">
+                <li>3PLのD係数とパラメータ尺度を出典どおりに統一する。</li>
+                <li>尤度計算をlog-spaceとlog-sum-expへ変更する。</li>
+                <li><code>E[V(θ)|u]</code>と語彙数の事後区間を実装する。</li>
+                <li>原論文互換値と既知語数候補を別の得点IDとして実装・比較する。</li>
+                <li>筆記版・音声版共通の純粋関数モジュールとfixtureへ集約する。</li>
+              </ul>
+              <p><strong>出口:</strong> 独立実装との数値一致、境界ケース、後方互換比較がCIで合格。</p>
+            </div>
+          </article>
+
+          <article class="phase">
+            <div class="phase-label">
+              <strong>2</strong>
+              <span>CAT</span>
+            </div>
+            <div class="phase-body">
+              <h3>CAT設計とMonte Carlo選定</h3>
+              <div class="phase-meta">
+                <span class="status active">実行中・初回確認不合格</span>
+                <span class="mini">Phase 1必須</span>
+              </div>
+              <ul class="checklist">
+                <li>固定長、θ-SE停止、語彙数区間停止を比較する。</li>
+                <li>頻度レベル・品詞の内容制約をshadow testまたは制約付き選択で実装する。</li>
+                <li>randomesque等の露出制御を比較し、最大露出率を管理する。</li>
+                <li>EAP、MAP、WLE候補と停止規則の相互作用を評価する。</li>
+                <li>極端θ、モデル誤指定、項目パラメータ誤差を含む感度分析を行う。</li>
+              </ul>
+              <p><strong>出口:</strong> 事前に決めた精度・負担・露出・内容基準を満たす構成を1つ選定。</p>
+            </div>
+          </article>
+
+          <article class="phase">
+            <div class="phase-label">
+              <strong>3</strong>
+              <span>WRITTEN</span>
+            </div>
+            <div class="phase-body">
+              <h3>筆記版の実データ妥当化</h3>
+              <div class="phase-meta">
+                <span class="status planned">計画済み</span>
+                <span class="mini">Phase 2必須</span>
+              </div>
+              <ul class="checklist">
+                <li>160問回答を用いたpost-hoc CATと交差検証を行う。</li>
+                <li>フル版とのバイアス、RMSE、順位一致、区間被覆率を確認する。</li>
+                <li>頻度レベル・品詞・熟達度・主要属性についてDIFと適合を検討する。</li>
+                <li>外的語彙尺度、読解・聴解指標との関係を再検証する。</li>
+              </ul>
+              <p><strong>出口:</strong> 想定用途ごとの妥当性論証と制限事項を技術報告として公開可能。</p>
+            </div>
+          </article>
+
+          <article class="phase">
+            <div class="phase-label">
+              <strong>4</strong>
+              <span>AUDIO</span>
+            </div>
+            <div class="phase-body">
+              <h3>音声版の再設計・独立校正</h3>
+              <div class="phase-meta">
+                <span class="status blocker">公開停止</span>
+                <span class="mini">Phase 1以降</span>
+              </div>
+              <ul class="checklist">
+                <li>音声で測る構成概念、画面表示、再生回数、速度、声種を仕様固定する。</li>
+                <li>日本語問題語と英語選択肢の音声経路をテストし、端末差を管理する。</li>
+                <li>音声条件で回答データを収集し、項目を再校正する。</li>
+                <li>筆記版とのDIF・モード等価性を確認し、必要なら別尺度として報告する。</li>
+              </ul>
+              <p><strong>出口:</strong> 音声版固有の項目バンク、技術報告、得点バージョンが完成。</p>
+            </div>
+          </article>
+
+          <article class="phase">
+            <div class="phase-label">
+              <strong>5</strong>
+              <span>RELEASE</span>
+            </div>
+            <div class="phase-body">
+              <h3>リリース・継続監視</h3>
+              <div class="phase-meta">
+                <span class="status planned">将来</span>
+                <span class="mini">Phase 3/4の個別ゲート</span>
+              </div>
+              <ul class="checklist">
+                <li>モデルカード、技術マニュアル、利用制限、変更履歴を公開する。</li>
+                <li>結果ファイルへcommit、bank hash、score model IDを保存する。</li>
+                <li>項目露出、得点分布、端末障害、母集団ドリフトを監視する。</li>
+                <li>再校正・廃止・過去得点再現の運用手順を定める。</li>
+              </ul>
+              <p><strong>出口:</strong> 版付き成果物と再現パッケージをタグ付けし、用途別に公開。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="simulation">
+        <p class="section-kicker">Pre-registered evaluation matrix</p>
+        <h2>CATシミュレーション設計</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>要素</th>
+                <th>最低条件</th>
+                <th>主要評価指標</th>
+                <th>意思決定</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>真のθ</td>
+                <td>−3.5～3.5の格子＋実証分布</td>
+                <td>条件付きbias、RMSE、被覆率</td>
+                <td>端点を含め許容誤差を満たすか</td>
+              </tr>
+              <tr>
+                <td>推定法</td>
+                <td>EAP、MAP、WLE候補</td>
+                <td>収縮bias、失敗率、計算時間</td>
+                <td>停止規則と組み合わせて選ぶ</td>
+              </tr>
+              <tr>
+                <td>停止規則</td>
+                <td>固定長、θ-SE、語彙数区間幅</td>
+                <td>平均・95%点の問題数、目標未達率</td>
+                <td>用途別に精度と負担を最適化</td>
+              </tr>
+              <tr>
+                <td>項目選択</td>
+                <td>MFI、randomesque、制約付き選択</td>
+                <td>情報量、内容構成、項目重複</td>
+                <td>効率だけでなく代表性を満たす</td>
+              </tr>
+              <tr>
+                <td>露出</td>
+                <td>最大露出・未使用率を記録</td>
+                <td>最大率、平均率、bank利用率</td>
+                <td>事前に決めた上限以下</td>
+              </tr>
+              <tr>
+                <td>モデル誤指定</td>
+                <td>D、事前分布、DIF、局所依存を変動</td>
+                <td>robustness、最悪ケース誤差</td>
+                <td>結論が仮定に過度依存しないか</td>
+              </tr>
+              <tr>
+                <td>語彙数</td>
+                <td>複数estimandを明示比較</td>
+                <td>bias、RMSE、区間幅・被覆率</td>
+                <td>採用方式と非採用理由を記録</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="callout">
+          <strong>再現条件:</strong>
+          各セルの反復数、seed、乱数生成器、項目バンク論理・成果物hash、コードcommit、実行環境、除外基準をmanifestへ保存する。
+          SHAは保存バイト列の同一性に使い、別環境での再計算は事前定義されたゲートと採否が変わらないことを検査する。連続診断値の完全一致自体を妥当性の証明やCIゲートとしない。
+          結果を見てから閾値を変更した場合は探索と確認を分け、独立条件で再評価する。
+        </p>
+        <div class="grid" style="margin-top: 1rem">
+          <article class="card full">
+            <span class="status blocker">confirmation-v1: 0 / 7 passed</span>
+            <h3>初回確認シミュレーションの判定</h3>
+            <p>
+              15のtheta条件、各5,000反復、7候補（計525,000 CAT）を固定済み基準で評価した。
+              現行型MFIは最大項目露出率<code>.583</code>、露出を抑えたfixed20/randomesque20は
+              theta <code>-3.5</code>でbias <code>.572</code>・95%被覆率<code>.752</code>となり、
+              精度・負担・露出を同時に満たす候補はなかった。
+            </p>
+            <p>
+              <a href="../simulation/results/confirmation-v1-summary.md">結果要約</a> /
+              <a href="../simulation/decision-criteria-v1.md">事前固定した判定基準</a> /
+              <a href="../simulation/results/confirmation-v1-evaluation.json">機械判定JSON</a>
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">item-bank range limitation</span>
+            <h3>端点失敗の原因診断</h3>
+            <p>
+              独立base R実装と照合した項目情報診断では、theta <code>-3.5</code>の
+              全160問による局所情報換算SDが<code>.480</code>、theta <code>3.5</code>でも
+              <code>.337</code>だった。oracle 20問は低端で全バンク情報の99.69%を既に使うため、
+              最大長を30問より増やすだけでは目標<code>.30</code>へ到達しない。
+            </p>
+            <p>
+              <a href="../simulation/results/bank-diagnostic-v1-summary.md">項目バンク診断要約</a> /
+              <a href="../simulation/results/bank-diagnostic-v1.json">完全な診断JSON</a>
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">exploratory estimator sensitivity complete</span>
+            <h3>推定法感度分析の契約</h3>
+            <p>
+              EAP（標準偏差1・2の正規事前分布）、MAP、bounded MLE、Warm WLEを候補として実装し、
+              独立base R計算と混合・全正答・全誤答パターンで照合した。Warm WLEは
+              <code>log L(theta) + 0.5 log I(theta)</code>を直接最大化し、簡略近似は用いない。
+              全正答・全誤答のbounded MLEが境界に達することも明示的に記録する。
+            </p>
+            <p>
+              同一の項目・反応経路15,000本で感度分析した結果、bounded MLEは最大33%が境界に達した。
+              Warm WLEは最大絶対biasが20問で<code>.132</code>、30問で<code>.095</code>と小さかったが、
+              低端RMSEはそれぞれ<code>.507</code>、<code>.461</code>であり採用確定には至らない。
+              <a href="../docs/adr/0002-estimator-candidates.md">推定法候補ADR</a> /
+              <a href="../simulation/results/estimator-sensitivity-exploratory-v1-summary.md">感度分析要約</a>。
+              次は条件付き露出制御と測定範囲判定を設計する。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">unconditional SH is insufficient</span>
+            <h3>直接露出制御と頻度帯blueprint</h3>
+            <p>
+              項目別実施確率を8回のシミュレーションで校正するSympson–Hetter法を実装した。
+              3設計・計94,500 CATの探索では、最大周辺露出を従来の<code>.356</code>から
+              <code>.256–.260</code>へ低減したが、厳密な<code>.25</code>ゲートには届かなかった。
+              さらにtheta条件別最大露出は<code>.998–1.000</code>であり、周辺露出だけでは
+              特定能力帯での集中を防げない。
+            </p>
+            <p>
+              low/middle/highを各2問以上とする3帯候補は、各Levelを最低1問とする候補より
+              精度低下が小さかった。後者は棄却し、3帯候補も内容専門家の承認までは探索仕様とする。
+              <a href="../docs/adr/0003-exposure-control.md">露出制御ADR</a> /
+              <a href="../simulation/results/exposure-control-exploratory-v1-summary.md">探索結果要約</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">information-support diagnostic complete</span>
+            <span class="status blocker">operational reporting range unvalidated</span>
+            <h3>項目バンク情報支持範囲と報告保留契約</h3>
+            <p>
+              全160問の情報換算SDが<code>.30</code>以下となる、theta 0を含む連結成分を厳密に求めた。
+              境界はtheta <code>[-2.903165, 3.427993]</code>で、base Rの独立実装と
+              <code>1e-9</code>以内で一致した。対応する原論文モデル得点は約<code>[919.80, 7993.32]</code>だが、
+              真の既知語数境界とは解釈しない。
+            </p>
+            <p>
+              事後確率による<code>below-range / within-range / above-range / indeterminate</code>の
+              4分類を実装したが、全結果に<code>exploratory-not-for-score-reporting</code>を付与する。
+              全項目情報の<code>1/sqrt(I)</code>は20項目CATのRMSEではないため、次は境界付近を密にした
+              common-pathシミュレーションと独立確認を行う。
+              <a href="../docs/adr/0004-measurement-range.md">測定範囲ADR</a> /
+              <a href="../simulation/results/measurement-range-diagnostic-v1-summary.md">診断要約</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">range-reporting: 0 / 36 passed</span>
+            <h3>範囲判定は機能、数値区間の校正は未達</h3>
+            <p>
+              事前固定した27 theta条件・27,000 CAT・486,000候補事後評価では、36候補の合格は0だった。
+              20候補は区間被覆率だけが不合格で、狭い範囲候補は範囲外の誤った数値報告を概ね抑制した。
+              しかし数値報告ケースの条件付き95%被覆率は<code>.918–.9896</code>に分散し、
+              Wilson区間を含む全セル基準を満たさなかった。
+            </p>
+            <p>
+              結果を見た後に被覆率基準や境界不問帯を緩めず、確認実験への候補選択を保留する。
+              次はrange・点推定と分離して、simulation-calibrated intervalとlikelihood/WLE互換区間を
+              共通経路で比較する。
+              <a href="../docs/adr/0005-range-reporting-exploration.md">範囲報告ADR</a> /
+              <a href="../simulation/results/range-reporting-exploratory-v1-summary.md">探索結果要約</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">interval calibration: 0 / 10 passed</span>
+            <h3>区間単独の校正では選択後の被覆率を保証できない</h3>
+            <p>
+              事前固定した校正74,000パスと独立評価54,000パスで、equal-tail EAP、固定尤度比、
+              校正尤度比、校正Warm重み付き尤度、EAP Neyman区間を比較した。base Rで数値核を独立照合したが、
+              10候補の合格は0だった。30問候補のbias・RMSE・幅は良好でも、全thetaセルの90% Wilson同等性と
+              片側逸脱率を同時には満たさなかった。
+            </p>
+            <p>
+              校正分布は各thetaの全生成パスを対象とする一方、評価は範囲分類・区間妥当性・情報支持範囲を通過して
+              数値報告されたパスに条件づける。この選択で標本分布が変わり得るため、次は区間単独ではなく
+              選択・区間を合わせた完全な報告手続を校正する。確認実験と本番切替は保留する。
+              <a href="../docs/adr/0006-interval-calibration-exploration.md">区間校正ADR</a> /
+              <a href="../simulation/results/interval-calibration-exploratory-v1-summary.md">探索結果要約</a> /
+              <a href="../simulation/selective-reporting-design-v1.md">次期選択的報告設計</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">selective reporting: rejected</span>
+            <h3>情報支持端点では選択後の点推定が内側へ偏る</h3>
+            <p>
+              27校正セル・303,179校正CATと、両端点各10万件を含む320,000独立評価CATで、
+              数値報告という選択事象に条件づけたEAP Neyman区間を検証した。端点被覆率は
+              equal-tail基準の約<code>.535/.472</code>から<code>.979/.987</code>へ改善したが、
+              過被覆・幅・空反転fallbackに加え、選択後EAP biasが下端<code>+.340</code>、上端<code>-.439</code>となり不合格だった。
+            </p>
+            <p>
+              境界内に推定された経路だけを選べば、端点の推定分布が内側へ寄るのは構造的である。
+              区間を広げても点推定biasは修復できない。次は全項目情報支持範囲と、CATが点推定を報告する
+              内側の運用範囲を分離し、guard band候補を事前固定して比較する。13万CATの実行可能性pilotでは、
+              直接棄却法の校正上限内に必要な選択例を得られない8セルが判明したため、本評価は未着手である。
+              続く36万CATの防御的importance sampling検証は、全weight恒等式と6直接照合には合格したが、
+              下端の選択後ESSが<code>7.35–238.61</code>に留まり、proposalを棄却した。
+              <a href="../docs/adr/0007-selective-reporting-boundaries.md">選択的報告ADR</a> /
+              <a href="../simulation/results/selective-reporting-exploratory-v1-summary.md">探索結果要約</a> /
+              <a href="../simulation/selection-adjusted-point-design-v1.md">次期選択補正点推定設計</a> /
+              <a href="../simulation/results/selection-adjusted-feasibility-v1-summary.md">実行可能性pilot要約</a> /
+              <a href="../docs/adr/0008-selection-adjusted-calibration.md">校正方式ADR</a> /
+              <a href="../simulation/results/selection-adjusted-importance-validation-v1-summary.md">importance検証要約</a> /
+              <a href="../docs/adr/0009-defensive-importance-sampling.md">importance ADR</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">public latent scores default-deny</span>
+            <h3>未妥当化の数値得点を公開経路から遮断</h3>
+            <p>
+              確認的妥当化を通過した報告ポリシーが存在しないため、受験者画面と自動Excelから
+              theta、標準誤差、0–8000尺度、未妥当化の範囲分類を除去した。内部thetaは項目選択と
+              停止のためだけに維持し、公開結果は実施項目の回答集計に限定する。正答率も適応的に
+              選ばれた項目の記述集計であり、比較可能な能力得点ではないと明示する。
+            </p>
+            <p>
+              <code>latent-score-reporting-default-deny-v1</code> はfeature flagではない。
+              専用テストと静的検証がUI propsとExcelフィールドへの潜在得点の再混入を拒否する。
+              解除には新しいポリシーID、条件付き性能とMonte Carlo誤差の事前固定評価、独立確認、
+              実データ妥当化、音声版のモード固有証拠が必要である。
+              <a href="../docs/adr/0010-public-score-reporting-default-deny.md">公開得点default-deny ADR</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">research administration fixed at 30</span>
+            <span class="status blocker">not score-valid</span>
+            <h3>未妥当化SE停止を研究実施経路から除去</h3>
+            <p>
+              旧アプリの<code>SE ≤ .40 / min20 / max30</code>は、確認試験で平均20.04問、
+              99.68%がprecision停止した一方、最悪bias <code>.392</code>、RMSE <code>.478</code>、
+              95%被覆率<code>.822</code>で不合格だった。この事後SDに実施長を決めさせず、
+              研究用手続を<code>paper-3pl-v1 / fixed30 / randomesque-5</code>へ固定した。
+            </p>
+            <p>
+              fixed-30も得点ゲートには不合格であり、<code>research-baseline-not-score-valid</code>とする。
+              各実施のseed、停止理由、手続ID、項目バンク論理SHAと成果物SHAをExcelへ保存し、確認計画との構造一致を
+              CIで検査する。項目露出は秘匿ゲートではなく、項目利用偏在・精度・再受験効果の診断として残す。
+              <a href="../docs/adr/0011-research-administration-fixed-length.md">研究実施規則ADR</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">reproducibility contract separated</span>
+            <h3>SHAの役割をバイト同一性に限定</h3>
+            <p>
+              異なるOS・CPUで浮動小数点集計の完全同一を要求せず、計画・ソース・保存済み成果物のSHAと、
+              再計算後も事前定義した候補ID・ゲート・採否が変わらないことを別々に検査する。
+              採否ゲートのない探索成果物には事後的な数値閾値を設けず、成果物同一性と計算手続のunit testを検査する。
+              項目バンクはBOM・改行・等価な数値表記を正規化した論理SHAと、配布CSVの成果物SHAを併記する。
+              <a href="../docs/adr/0013-reproducibility-verification.md">再現性検証ADR</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status done">audio stimulus protocol fixed</span>
+            <span class="status blocker">mode validity not established</span>
+            <h3>端末依存TTSを除去し、音声刺激の提示条件を固定</h3>
+            <p>
+              日本語問題語は視覚提示のみ、英語4選択肢は同梱MP3のみとした。A→B→C→Dの順に
+              各1回を最後まで聞くまで回答できず、成功後の再生・同時再生・端末TTS fallbackを禁止する。
+              音声失敗時だけ再試行し、別voiceへ無言で置換しない。選択肢順は研究実施seedから再現可能にした。
+            </p>
+            <p>
+              160項目の640選択肢セルは重複を除く639語で、同梱MP3も639件、欠損・余剰・slug衝突は0件だった。
+              全資産をファイル別SHA-256からなるmanifestで固定した。ただし生成時のgTTS version・voice IDは
+              記録がなく、発音・音量・無音区間の専門QA、実施環境仕様、音声条件での独立校正は未完了である。
+              <a href="https://github.com/Ryuya-dot-com/VST-NJ8_CAT_Audio/blob/remediation/roadmap/docs/adr/0012-audio-stimulus-administration.md">音声刺激ADR</a>。
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="gates">
+        <p class="section-kicker">Release gates</p>
+        <h2>合否ゲート</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>G0: 仕様ゲート</h3>
+            <ul class="compact-list">
+              <li>estimandと利用目的が承認済み</li>
+              <li>式・尺度・事前分布に出典あり</li>
+              <li>得点IDと項目バンク版を固定</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>G1: 数値ゲート</h3>
+            <ul class="compact-list">
+              <li>独立参照実装と一致</li>
+              <li>fixtureと境界テスト合格</li>
+              <li>事後区間計算を検証</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>G2: CATゲート</h3>
+            <ul class="compact-list">
+              <li>条件付きbias/RMSE基準を達成</li>
+              <li>内容制約と露出上限を達成</li>
+              <li>目標未達時の最大長挙動を説明</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>G3: 実証ゲート</h3>
+            <ul class="compact-list">
+              <li>フル版との交差検証完了</li>
+              <li>DIFと母集団制限を報告</li>
+              <li>外的基準との関係を確認</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>G4: 音声ゲート</h3>
+            <ul class="compact-list">
+              <li>全音声経路の自動・実機テスト</li>
+              <li>音声条件で独立校正</li>
+              <li>モード等価性または非等価性を明示</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>G5: 公開ゲート</h3>
+            <ul class="compact-list">
+              <li>未合格時は潜在得点をdefault-deny</li>
+              <li>技術報告と変更履歴を公開</li>
+              <li>結果の再現情報を保存</li>
+              <li>ロールバック手順を確認</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="backlog">
+        <p class="section-kicker">Seed backlog</p>
+        <h2>最初に切るチケット</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>優先度</th>
+                <th>作業</th>
+                <th>成果物</th>
+                <th>依存</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GOV-001</td>
+                <td><span class="status active">P0</span></td>
+                <td>現行仕様・リスク・得点claimを凍結</td>
+                <td>本HTML＋技術仕様</td>
+                <td>なし</td>
+              </tr>
+              <tr>
+                <td>ENG-001</td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
+                <td>テスト基盤、CI、現行fixtureを追加</td>
+                <td><code>legacy-cat-v0</code> 自動数値回帰テスト</td>
+                <td>GOV-001</td>
+              </tr>
+              <tr>
+                <td>PSY-001</td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
+                <td>estimandと得点方式の決定記録</td>
+                <td><a href="adr/0001-score-estimand.md">ADR-001</a></td>
+                <td>GOV-001</td>
+              </tr>
+              <tr>
+                <td>PSY-002</td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
+                <td>D=1.702を含む3PL参照実装</td>
+                <td>base R独立fixture・式検証</td>
+                <td>ENG-001</td>
+              </tr>
+              <tr>
+                <td>PSY-003</td>
+                <td><span class="status major">P1</span> <span class="status done">完了</span></td>
+                <td>語彙数事後分布と区間推定</td>
+                <td>点推定＋95%区間</td>
+                <td>PSY-001/002</td>
+              </tr>
+              <tr>
+                <td>CAT-001</td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
+                <td>再現可能なMonte Carlo harness</td>
+                <td>manifest＋MCSE付き集計表＋SHA同一性/研究判断を分離した機械判定</td>
+                <td>ENG-001/PSY-002</td>
+              </tr>
+              <tr>
+                <td>CAT-002</td>
+                <td><span class="status major">P1</span> <span class="status active">再設計中</span></td>
+                <td>内容制約・露出制御候補を比較</td>
+                <td>範囲報告36候補は0合格。区間校正法を探索後、完全な報告規則を独立確認</td>
+                <td>CAT-001</td>
+              </tr>
+              <tr>
+                <td>AUD-001</td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
+                <td>音声提示仕様と既知不具合を固定</td>
+                <td>ADR 0012＋音声資産manifest検証＋提示状態テスト</td>
+                <td>GOV-001</td>
+              </tr>
+              <tr>
+                <td>VAL-001</td>
+                <td><span class="status major">P1</span></td>
+                <td>160問データによるpost-hoc CAT計画</td>
+                <td>分析計画・事前登録案</td>
+                <td>CAT-002</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="references">
+        <p class="section-kicker">Evidence base</p>
+        <h2>参照資料</h2>
+        <details open>
+          <summary>VST-NJ8原論文</summary>
+          <p>
+            Hamada et al. (2021),
+            <a href="https://doi.org/10.32234/jacetjournal.65.0_23">
+              Development of a Vocabulary Size Test for Japanese EFL Learners Using the New JACET List of 8,000 Basic Words
+            </a>
+          </p>
+        </details>
+        <details>
+          <summary>CAT停止規則・項目選択</summary>
+          <p>
+            <a href="https://doi.org/10.7333/jcat.v1i1.16">Babcock &amp; Weiss: Termination Criteria in CAT</a>、
+            <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5968224/">Components of the item selection algorithm in CAT</a>
+          </p>
+        </details>
+        <details>
+          <summary>モード等価性</summary>
+          <p>
+            <a href="https://www.iltaonline.com/page/ILTAGuidelinesforPractice2024">
+              ILTA Guidelines for Practice 2024, Section 4.6
+            </a>
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        この文書は実装ロードマップであり、妥当性を宣言する技術報告ではない。各ゲートの証拠が揃うまで、
+        現行得点の利用範囲を拡張しない。更新時は文書版、commit、変更理由を記録する。
+      </p>
+    </footer>
+  </body>
+</html>
