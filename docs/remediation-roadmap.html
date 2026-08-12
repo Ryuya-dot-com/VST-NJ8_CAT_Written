@@ -473,9 +473,9 @@
           「8,000語中の既知語数」という解釈、停止規則、内容代表性、モード等価性までを段階的に検証する。
         </p>
         <div class="meta-row">
-          <span class="chip">文書版 0.1</span>
+          <span class="chip">文書版 0.2</span>
           <span class="chip">作成日 2026-08-12</span>
-          <span class="chip">状態: 修正開始</span>
+          <span class="chip">状態: CAT測定範囲を再設計中</span>
           <span class="chip">正本: Written / docs</span>
         </div>
       </div>
@@ -520,12 +520,14 @@
             <span class="status done">CAT-002 bank diagnosis complete</span>
             <span class="status done">CAT-002 estimator sensitivity complete</span>
             <span class="status done">CAT-002 unconditional exposure study complete</span>
-            <span class="status active">CAT-002 conditional exposure/range redesign</span>
+            <span class="status done">CAT-002 information-support range complete</span>
+            <span class="status active">CAT-002 operational range simulation next</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
               Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
-              <code>confirmation-v1</code>では7候補すべてが不合格だったため、CAT設計を再検討する。得点式の本番切替はまだ行わない。
+              <code>confirmation-v1</code>では7候補すべてが不合格だった。全項目バンクの情報支持範囲を独立実装で確定したが、
+              20項目CATの数値報告範囲とはみなさない。次に範囲判定の誤分類と条件付き精度をシミュレーションし、得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -949,6 +951,25 @@
               <a href="../simulation/results/exposure-control-exploratory-v1-summary.md">探索結果要約</a>。
             </p>
           </article>
+          <article class="card full">
+            <span class="status done">information-support diagnostic complete</span>
+            <span class="status blocker">operational reporting range unvalidated</span>
+            <h3>項目バンク情報支持範囲と報告保留契約</h3>
+            <p>
+              全160問の情報換算SDが<code>.30</code>以下となる、theta 0を含む連結成分を厳密に求めた。
+              境界はtheta <code>[-2.903165, 3.427993]</code>で、base Rの独立実装と
+              <code>1e-9</code>以内で一致した。対応する原論文モデル得点は約<code>[919.80, 7993.32]</code>だが、
+              真の既知語数境界とは解釈しない。
+            </p>
+            <p>
+              事後確率による<code>below-range / within-range / above-range / indeterminate</code>の
+              4分類を実装したが、全結果に<code>exploratory-not-for-score-reporting</code>を付与する。
+              全項目情報の<code>1/sqrt(I)</code>は20項目CATのRMSEではないため、次は境界付近を密にした
+              common-pathシミュレーションと独立確認を行う。
+              <a href="../docs/adr/0004-measurement-range.md">測定範囲ADR</a> /
+              <a href="../simulation/results/measurement-range-diagnostic-v1-summary.md">診断要約</a>。
+            </p>
+          </article>
         </div>
       </section>
 
@@ -1068,7 +1089,7 @@
                 <td>CAT-002</td>
                 <td><span class="status major">P1</span> <span class="status active">再設計中</span></td>
                 <td>内容制約・露出制御候補を比較</td>
-                <td>端点のbank情報不足を確認。測定範囲判定・推定法・直接露出制御を再設計</td>
+                <td>bank情報範囲・推定法・直接露出を診断済み。運用上の数値報告範囲をシミュレーション検証</td>
                 <td>CAT-001</td>
               </tr>
               <tr>
