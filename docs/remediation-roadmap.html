@@ -473,9 +473,9 @@
           「8,000語中の既知語数」という解釈、停止規則、内容代表性、モード等価性までを段階的に検証する。
         </p>
         <div class="meta-row">
-          <span class="chip">文書版 0.3</span>
+          <span class="chip">文書版 0.4</span>
           <span class="chip">作成日 2026-08-12</span>
-          <span class="chip">状態: CAT測定範囲を再設計中</span>
+          <span class="chip">状態: 選択的報告手続を再設計中</span>
           <span class="chip">正本: Written / docs</span>
         </div>
       </div>
@@ -522,14 +522,15 @@
             <span class="status done">CAT-002 unconditional exposure study complete</span>
             <span class="status done">CAT-002 information-support range complete</span>
             <span class="status done">CAT-002 range-reporting exploration complete</span>
-            <span class="status active">CAT-002 interval calibration next</span>
+            <span class="status done">CAT-002 interval calibration complete</span>
+            <span class="status active">CAT-002 selective calibration next</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
               Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
               <code>confirmation-v1</code>では7候補すべてが不合格だった。全項目バンクの情報支持範囲を独立実装で確定したが、
-              20項目CATの数値報告範囲とはみなさない。範囲報告36候補も固定基準では全て不合格だったため、
-              次に数値区間の条件付き校正を再設計する。得点式の本番切替はまだ行わない。
+              20項目CATの数値報告範囲とはみなさない。範囲報告36候補と区間校正10候補も固定基準では全て不合格だったため、
+              次に数値報告という選択事象を含む条件付き校正を再設計する。得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -987,6 +988,23 @@
               共通経路で比較する。
               <a href="../docs/adr/0005-range-reporting-exploration.md">範囲報告ADR</a> /
               <a href="../simulation/results/range-reporting-exploratory-v1-summary.md">探索結果要約</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">interval calibration: 0 / 10 passed</span>
+            <h3>区間単独の校正では選択後の被覆率を保証できない</h3>
+            <p>
+              事前固定した校正74,000パスと独立評価54,000パスで、equal-tail EAP、固定尤度比、
+              校正尤度比、校正Warm重み付き尤度、EAP Neyman区間を比較した。base Rで数値核を独立照合したが、
+              10候補の合格は0だった。30問候補のbias・RMSE・幅は良好でも、全thetaセルの90% Wilson同等性と
+              片側逸脱率を同時には満たさなかった。
+            </p>
+            <p>
+              校正分布は各thetaの全生成パスを対象とする一方、評価は範囲分類・区間妥当性・情報支持範囲を通過して
+              数値報告されたパスに条件づける。この選択で標本分布が変わり得るため、次は区間単独ではなく
+              選択・区間を合わせた完全な報告手続を校正する。確認実験と本番切替は保留する。
+              <a href="../docs/adr/0006-interval-calibration-exploration.md">区間校正ADR</a> /
+              <a href="../simulation/results/interval-calibration-exploratory-v1-summary.md">探索結果要約</a>。
             </p>
           </article>
         </div>
