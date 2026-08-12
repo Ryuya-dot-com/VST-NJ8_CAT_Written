@@ -519,7 +519,8 @@
             <span class="status done">CAT-001 complete</span>
             <span class="status done">CAT-002 bank diagnosis complete</span>
             <span class="status done">CAT-002 estimator sensitivity complete</span>
-            <span class="status active">CAT-002 exposure/range redesign</span>
+            <span class="status done">CAT-002 unconditional exposure study complete</span>
+            <span class="status active">CAT-002 conditional exposure/range redesign</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
@@ -928,7 +929,24 @@
               低端RMSEはそれぞれ<code>.507</code>、<code>.461</code>であり採用確定には至らない。
               <a href="../docs/adr/0002-estimator-candidates.md">推定法候補ADR</a> /
               <a href="../simulation/results/estimator-sensitivity-exploratory-v1-summary.md">感度分析要約</a>。
-              次は直接露出制御と測定範囲判定を設計する。
+              次は条件付き露出制御と測定範囲判定を設計する。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">unconditional SH is insufficient</span>
+            <h3>直接露出制御と頻度帯blueprint</h3>
+            <p>
+              項目別実施確率を8回のシミュレーションで校正するSympson–Hetter法を実装した。
+              3設計・計94,500 CATの探索では、最大周辺露出を従来の<code>.356</code>から
+              <code>.256–.260</code>へ低減したが、厳密な<code>.25</code>ゲートには届かなかった。
+              さらにtheta条件別最大露出は<code>.998–1.000</code>であり、周辺露出だけでは
+              特定能力帯での集中を防げない。
+            </p>
+            <p>
+              low/middle/highを各2問以上とする3帯候補は、各Levelを最低1問とする候補より
+              精度低下が小さかった。後者は棄却し、3帯候補も内容専門家の承認までは探索仕様とする。
+              <a href="../docs/adr/0003-exposure-control.md">露出制御ADR</a> /
+              <a href="../simulation/results/exposure-control-exploratory-v1-summary.md">探索結果要約</a>。
             </p>
           </article>
         </div>
