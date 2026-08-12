@@ -47,7 +47,7 @@ export function LandingView({
                     <h5 className="info-title">受験の流れ</h5>
                     <ul className="info-list">
                       <li>氏名を入力して開始します</li>
-                      <li>英単語に最も近い意味を選びます</li>
+                      <li>日本語の問題語に対応する英単語を選びます</li>
                       <li>選択すると自動で次の問題へ進みます</li>
                       <li>終了時に結果を表示し、Excelファイルを保存します</li>
                     </ul>
