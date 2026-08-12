@@ -10,6 +10,13 @@ interface TestViewProps {
   isProcessing: boolean;
 }
 
+const PART_OF_SPEECH_LABELS: Record<string, string> = {
+  noun: "名詞",
+  verb: "動詞",
+  adjective: "形容詞",
+  adverb: "副詞",
+};
+
 export function TestView({
   item,
   questionNumber,
@@ -19,7 +26,8 @@ export function TestView({
   onSelect,
   isProcessing,
 }: TestViewProps) {
-  const hasPartOfSpeech = Boolean(item.PartOfSpeech && item.PartOfSpeech !== "-");
+  const partOfSpeechLabel =
+    PART_OF_SPEECH_LABELS[item.PartOfSpeech.toLowerCase()];
 
   return (
     <div className="app-shell">
@@ -31,16 +39,14 @@ export function TestView({
                 <span className="pill pill-accent">
                   問題 {questionNumber} / {totalQuestions}
                 </span>
-                <div className="d-flex flex-wrap gap-2">
-                  {hasPartOfSpeech && (
-                    <span className="pill pill-tonal">{item.PartOfSpeech}</span>
-                  )}
-                  <span className="pill pill-neutral">Level {item.Level}</span>
-                </div>
+                {partOfSpeechLabel && (
+                  <span className="pill pill-tonal">{partOfSpeechLabel}</span>
+                )}
               </div>
 
               <p className="test-instruction">
-                最も近い意味を選んでください。選択するとすぐ次の問題へ進みます。
+                日本語の問題語に対応する英単語を選んでください。
+                選択するとすぐ次の問題へ進みます。
               </p>
 
               <div
@@ -60,7 +66,7 @@ export function TestView({
               </div>
 
               <div className="question-panel text-center">
-                <p className="question-label">単語</p>
+                <p className="question-label">日本語の問題語</p>
                 <h2 className="question-word">{item.Item}</h2>
               </div>
 
