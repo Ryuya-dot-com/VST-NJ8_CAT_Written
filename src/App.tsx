@@ -6,7 +6,10 @@ import { ResultsView } from "./components/ResultsView";
 import { TestView } from "./components/TestView";
 import type { Item } from "./types";
 import { loadItemBank } from "./utils/data";
-import { estimatePaperPosteriorEap } from "./utils/paperScoring";
+import {
+  estimatePaperPosteriorEap,
+  summarizePaperVocabularyPosterior,
+} from "./utils/paperScoring";
 import { shuffleArray } from "./utils/random";
 import {
   RESEARCH_ADMINISTRATION_AUDIT_FIELDS,
@@ -20,9 +23,9 @@ import {
   type ResearchStopReason,
 } from "./utils/researchAdministrationPolicy";
 import {
-  PUBLIC_OBSERVED_RESULT_FIELDS,
-  assertPublicResultFieldsAllowed,
-  buildPublicObservedResult,
+  PUBLIC_CAT_SCORE_RESULT_FIELDS,
+  assertResultFieldsAllowed,
+  buildPublicCatScoreResult,
 } from "./utils/scoreReportingPolicy";
 
 const TOTAL_ITEMS = RESEARCH_ADMINISTRATION_POLICY.fixedLength;
@@ -30,8 +33,7 @@ const TEST_LABEL = "筆記版";
 type DownloadStatus = "idle" | "success" | "error";
 
 const PUBLIC_SUMMARY_FIELDS = Object.freeze([
-  ...PUBLIC_OBSERVED_RESULT_FIELDS,
-  ...RESEARCH_ADMINISTRATION_AUDIT_FIELDS,
+  ...PUBLIC_CAT_SCORE_RESULT_FIELDS,
   "総回答時間（秒）",
   "平均回答時間（秒）",
   "A選択数",
@@ -189,6 +191,24 @@ function App() {
   const correctAnswers = responses.reduce<number>((acc, value) => acc + value, 0);
   const accuracy =
     responses.length > 0 ? (correctAnswers / responses.length) * 100 : 0;
+  const finalScore = useMemo(() => {
+    if (
+      itemBank.length === 0 ||
+      administered.length === 0 ||
+      administered.length !== responses.length
+    ) {
+      return null;
+    }
+    const posterior = estimatePaperPosteriorEap(
+      itemBank,
+      administered,
+      responses
+    );
+    return {
+      posterior,
+      vocabulary: summarizePaperVocabularyPosterior(itemBank, posterior),
+    };
+  }, [administered, itemBank, responses]);
   const handleStart = () => {
     if (loading || itemBank.length === 0) {
       return;
@@ -340,6 +360,15 @@ function App() {
         : 0;
     const selectedLabelCounts = countSelectedLabels(snapshot.selectedLabels);
     const createdAt = new Date();
+    const snapshotPosterior = estimatePaperPosteriorEap(
+      itemBank,
+      snapshot.administered,
+      snapshot.responses
+    );
+    const snapshotVocabulary = summarizePaperVocabularyPosterior(
+      itemBank,
+      snapshotPosterior
+    );
 
     const responsesSheet = snapshot.administered.map((idx, i) => {
       const item = itemBank[idx];
@@ -368,7 +397,7 @@ function App() {
 
     const summarySheet = [
       {
-        ...buildPublicObservedResult({
+        ...buildPublicCatScoreResult({
           testLabel: TEST_LABEL,
           userName,
           startedAt: snapshot.testStartedAtMs
@@ -380,11 +409,15 @@ function App() {
           administeredItems: snapshot.administered.length,
           correctAnswers: snapshotCorrectAnswers,
           accuracyPercent: roundFinite(snapshotAccuracy, 1),
+          thetaEap: snapshotPosterior.theta,
+          thetaPosteriorStandardDeviation:
+            snapshotPosterior.thetaStandardDeviation,
+          estimatedVocabularySize: snapshotVocabulary.posteriorMean,
+          vocabularyPosteriorStandardDeviation:
+            snapshotVocabulary.posteriorStandardDeviation,
+          vocabularyIntervalLower: snapshotVocabulary.credibleIntervalLower,
+          vocabularyIntervalUpper: snapshotVocabulary.credibleIntervalUpper,
         }),
-        ...buildResearchAdministrationAudit(
-          snapshot.administrationSeed,
-          snapshot.stopReason
-        ),
         "総回答時間（秒）": roundFinite(snapshotTotalTimeSeconds, 2),
         "平均回答時間（秒）": roundFinite(snapshotAverageTimeSeconds, 2),
         A選択数: selectedLabelCounts.A,
@@ -393,13 +426,24 @@ function App() {
         D選択数: selectedLabelCounts.D,
       },
     ];
-    assertPublicResultFieldsAllowed(summarySheet, PUBLIC_SUMMARY_FIELDS);
-    assertPublicResultFieldsAllowed(responsesSheet, PUBLIC_RESPONSE_FIELDS);
+    const administrationSheet = [
+      buildResearchAdministrationAudit(
+        snapshot.administrationSeed,
+        snapshot.stopReason
+      ),
+    ];
+    assertResultFieldsAllowed(summarySheet, PUBLIC_SUMMARY_FIELDS);
+    assertResultFieldsAllowed(responsesSheet, PUBLIC_RESPONSE_FIELDS);
+    assertResultFieldsAllowed(
+      administrationSheet,
+      RESEARCH_ADMINISTRATION_AUDIT_FIELDS
+    );
 
     try {
       const workbook = utils.book_new();
       const summaryWorksheet = utils.json_to_sheet(summarySheet);
       const responsesWorksheet = utils.json_to_sheet(responsesSheet);
+      const administrationWorksheet = utils.json_to_sheet(administrationSheet);
       summaryWorksheet["!cols"] = [
         { wch: 14 },
         { wch: 18 },
@@ -438,6 +482,13 @@ function App() {
       ];
       utils.book_append_sheet(workbook, summaryWorksheet, "概要");
       utils.book_append_sheet(workbook, responsesWorksheet, "回答履歴");
+      utils.book_append_sheet(workbook, administrationWorksheet, "再現情報");
+      workbook.Workbook = {
+        Sheets: workbook.SheetNames.map((name) => ({
+          name,
+          Hidden: name === "再現情報" ? 1 : 0,
+        })),
+      };
 
       const timestamp = formatTimestampForFilename(createdAt);
       writeFile(workbook, `jacet_cat_written_result_${timestamp}.xlsx`);
@@ -501,13 +552,18 @@ function App() {
     );
   }
 
-  if (done) {
+  if (done && finalScore) {
     return (
       <ResultsView
         userName={userName}
         totalItems={administered.length}
         correctAnswers={correctAnswers}
         accuracy={Math.round(accuracy * 10) / 10}
+        theta={finalScore.posterior.theta}
+        thetaStandardDeviation={finalScore.posterior.thetaStandardDeviation}
+        estimatedVocabularySize={finalScore.vocabulary.posteriorMean}
+        vocabularyIntervalLower={finalScore.vocabulary.credibleIntervalLower}
+        vocabularyIntervalUpper={finalScore.vocabulary.credibleIntervalUpper}
         downloadStatus={downloadStatus}
         onDownload={handleDownload}
         onRestart={handleRestart}
