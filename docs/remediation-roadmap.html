@@ -473,7 +473,7 @@
           「8,000語中の既知語数」という解釈、停止規則、内容代表性、モード等価性までを段階的に検証する。
         </p>
         <div class="meta-row">
-          <span class="chip">文書版 0.2</span>
+          <span class="chip">文書版 0.3</span>
           <span class="chip">作成日 2026-08-12</span>
           <span class="chip">状態: CAT測定範囲を再設計中</span>
           <span class="chip">正本: Written / docs</span>
@@ -521,13 +521,15 @@
             <span class="status done">CAT-002 estimator sensitivity complete</span>
             <span class="status done">CAT-002 unconditional exposure study complete</span>
             <span class="status done">CAT-002 information-support range complete</span>
-            <span class="status active">CAT-002 operational range simulation next</span>
+            <span class="status done">CAT-002 range-reporting exploration complete</span>
+            <span class="status active">CAT-002 interval calibration next</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
               Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
               <code>confirmation-v1</code>では7候補すべてが不合格だった。全項目バンクの情報支持範囲を独立実装で確定したが、
-              20項目CATの数値報告範囲とはみなさない。次に範囲判定の誤分類と条件付き精度をシミュレーションし、得点式の本番切替はまだ行わない。
+              20項目CATの数値報告範囲とはみなさない。範囲報告36候補も固定基準では全て不合格だったため、
+              次に数値区間の条件付き校正を再設計する。得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -970,6 +972,23 @@
               <a href="../simulation/results/measurement-range-diagnostic-v1-summary.md">診断要約</a>。
             </p>
           </article>
+          <article class="card full">
+            <span class="status blocker">range-reporting: 0 / 36 passed</span>
+            <h3>範囲判定は機能、数値区間の校正は未達</h3>
+            <p>
+              事前固定した27 theta条件・27,000 CAT・486,000候補事後評価では、36候補の合格は0だった。
+              20候補は区間被覆率だけが不合格で、狭い範囲候補は範囲外の誤った数値報告を概ね抑制した。
+              しかし数値報告ケースの条件付き95%被覆率は<code>.918–.9896</code>に分散し、
+              Wilson区間を含む全セル基準を満たさなかった。
+            </p>
+            <p>
+              結果を見た後に被覆率基準や境界不問帯を緩めず、確認実験への候補選択を保留する。
+              次はrange・点推定と分離して、simulation-calibrated intervalとlikelihood/WLE互換区間を
+              共通経路で比較する。
+              <a href="../docs/adr/0005-range-reporting-exploration.md">範囲報告ADR</a> /
+              <a href="../simulation/results/range-reporting-exploratory-v1-summary.md">探索結果要約</a>。
+            </p>
+          </article>
         </div>
       </section>
 
@@ -1089,7 +1108,7 @@
                 <td>CAT-002</td>
                 <td><span class="status major">P1</span> <span class="status active">再設計中</span></td>
                 <td>内容制約・露出制御候補を比較</td>
-                <td>bank情報範囲・推定法・直接露出を診断済み。運用上の数値報告範囲をシミュレーション検証</td>
+                <td>範囲報告36候補は0合格。区間校正法を探索後、完全な報告規則を独立確認</td>
                 <td>CAT-001</td>
               </tr>
               <tr>
