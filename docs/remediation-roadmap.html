@@ -473,9 +473,9 @@
           「8,000語中の既知語数」という解釈、停止規則、内容代表性、モード等価性までを段階的に検証する。
         </p>
         <div class="meta-row">
-          <span class="chip">文書版 0.4</span>
+          <span class="chip">文書版 0.5</span>
           <span class="chip">作成日 2026-08-12</span>
-          <span class="chip">状態: 選択的報告手続を再設計中</span>
+          <span class="chip">状態: 数値報告の内側範囲を再設計中</span>
           <span class="chip">正本: Written / docs</span>
         </div>
       </div>
@@ -523,14 +523,15 @@
             <span class="status done">CAT-002 information-support range complete</span>
             <span class="status done">CAT-002 range-reporting exploration complete</span>
             <span class="status done">CAT-002 interval calibration complete</span>
-            <span class="status active">CAT-002 selective calibration next</span>
+            <span class="status done">CAT-002 selective calibration complete</span>
+            <span class="status active">CAT-002 operational core next</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
               Git管理、現行fixture、CI、estimandのADR、原論文互換3PL、語彙得点の事後区間、再現可能なMonte Carlo基盤を実装済み。
               <code>confirmation-v1</code>では7候補すべてが不合格だった。全項目バンクの情報支持範囲を独立実装で確定したが、
-              20項目CATの数値報告範囲とはみなさない。範囲報告36候補と区間校正10候補も固定基準では全て不合格だったため、
-              次に数値報告という選択事象を含む条件付き校正を再設計する。得点式の本番切替はまだ行わない。
+              20項目CATの数値報告範囲とはみなさない。範囲報告36候補、区間校正10候補、選択的報告候補も固定基準で不合格だったため、
+              次に情報支持範囲より内側の運用数値報告範囲を再設計する。得点式の本番切替はまだ行わない。
             </p>
           </article>
         </div>
@@ -1006,6 +1007,23 @@
               <a href="../docs/adr/0006-interval-calibration-exploration.md">区間校正ADR</a> /
               <a href="../simulation/results/interval-calibration-exploratory-v1-summary.md">探索結果要約</a> /
               <a href="../simulation/selective-reporting-design-v1.md">次期選択的報告設計</a>。
+            </p>
+          </article>
+          <article class="card full">
+            <span class="status blocker">selective reporting: rejected</span>
+            <h3>情報支持端点では選択後の点推定が内側へ偏る</h3>
+            <p>
+              27校正セル・303,179校正CATと、両端点各10万件を含む320,000独立評価CATで、
+              数値報告という選択事象に条件づけたEAP Neyman区間を検証した。端点被覆率は
+              equal-tail基準の約<code>.535/.472</code>から<code>.979/.987</code>へ改善したが、
+              過被覆・幅・空反転fallbackに加え、選択後EAP biasが下端<code>+.340</code>、上端<code>-.439</code>となり不合格だった。
+            </p>
+            <p>
+              境界内に推定された経路だけを選べば、端点の推定分布が内側へ寄るのは構造的である。
+              区間を広げても点推定biasは修復できない。次は全項目情報支持範囲と、CATが点推定を報告する
+              内側の運用範囲を分離し、guard band候補を事前固定して比較する。
+              <a href="../docs/adr/0007-selective-reporting-boundaries.md">選択的報告ADR</a> /
+              <a href="../simulation/results/selective-reporting-exploratory-v1-summary.md">探索結果要約</a>。
             </p>
           </article>
         </div>
