@@ -525,6 +525,7 @@
             <span class="status done">CAT-002 interval calibration complete</span>
             <span class="status done">CAT-002 selective calibration complete</span>
             <span class="status active">CAT-002 operational core next</span>
+            <span class="status done">AUD-001 stimulus protocol fixed</span>
             <span class="status blocker">G2 not passed</span>
             <h3>現在の作業</h3>
             <p>
@@ -1068,6 +1069,22 @@
               <a href="../docs/adr/0011-research-administration-fixed-length.md">研究実施規則ADR</a>。
             </p>
           </article>
+          <article class="card full">
+            <span class="status done">audio stimulus protocol fixed</span>
+            <span class="status blocker">mode validity not established</span>
+            <h3>端末依存TTSを除去し、音声刺激の提示条件を固定</h3>
+            <p>
+              日本語問題語は視覚提示のみ、英語4選択肢は同梱MP3のみとした。A→B→C→Dの順に
+              各1回を最後まで聞くまで回答できず、成功後の再生・同時再生・端末TTS fallbackを禁止する。
+              音声失敗時だけ再試行し、別voiceへ無言で置換しない。選択肢順は研究実施seedから再現可能にした。
+            </p>
+            <p>
+              160項目の640選択肢セルは重複を除く639語で、同梱MP3も639件、欠損・余剰・slug衝突は0件だった。
+              全資産をファイル別SHA-256からなるmanifestで固定した。ただし生成時のgTTS version・voice IDは
+              記録がなく、発音・音量・無音区間の専門QA、実施環境仕様、音声条件での独立校正は未完了である。
+              <a href="https://github.com/Ryuya-dot-com/VST-NJ8_CAT_Audio/blob/remediation/roadmap/docs/adr/0012-audio-stimulus-administration.md">音声刺激ADR</a>。
+            </p>
+          </article>
         </div>
       </section>
 
@@ -1193,9 +1210,9 @@
               </tr>
               <tr>
                 <td>AUD-001</td>
-                <td><span class="status blocker">P0</span></td>
+                <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
                 <td>音声提示仕様と既知不具合を固定</td>
-                <td>音声版仕様・テスト表</td>
+                <td>ADR 0012＋音声資産manifest検証＋提示状態テスト</td>
                 <td>GOV-001</td>
               </tr>
               <tr>
