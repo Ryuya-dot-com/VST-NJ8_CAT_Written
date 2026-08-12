@@ -26,5 +26,5 @@ export default defineConfig({
     },
     react(),
   ],
-  base: '/VST-NJ8_CAT_Written/dist/',
+  base: '/VST-NJ8_CAT_Written/',
 })
