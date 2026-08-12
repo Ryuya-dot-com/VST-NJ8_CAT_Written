@@ -1051,6 +1051,23 @@
               <a href="../docs/adr/0010-public-score-reporting-default-deny.md">公開得点default-deny ADR</a>。
             </p>
           </article>
+          <article class="card full">
+            <span class="status done">research administration fixed at 30</span>
+            <span class="status blocker">not score-valid</span>
+            <h3>未妥当化SE停止を研究実施経路から除去</h3>
+            <p>
+              旧アプリの<code>SE ≤ .40 / min20 / max30</code>は、確認試験で平均20.04問、
+              99.68%がprecision停止した一方、最悪bias <code>.392</code>、RMSE <code>.478</code>、
+              95%被覆率<code>.822</code>で不合格だった。この事後SDに実施長を決めさせず、
+              研究用手続を<code>paper-3pl-v1 / fixed30 / randomesque-5</code>へ固定した。
+            </p>
+            <p>
+              fixed-30も得点ゲートには不合格であり、<code>research-baseline-not-score-valid</code>とする。
+              各実施のseed、停止理由、手続ID、項目バンクSHAをExcelへ保存し、確認計画との構造一致を
+              CIで検査する。項目露出は秘匿ゲートではなく、項目利用偏在・精度・再受験効果の診断として残す。
+              <a href="../docs/adr/0011-research-administration-fixed-length.md">研究実施規則ADR</a>。
+            </p>
+          </article>
         </div>
       </section>
 
