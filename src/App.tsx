@@ -5,7 +5,7 @@ import { LandingView } from "./components/LandingView";
 import { ResultsView } from "./components/ResultsView";
 import { TestView } from "./components/TestView";
 import type { Item } from "./types";
-import { estimateAbilityEap, selectNextItem, vocabFromTheta } from "./utils/cat";
+import { estimateAbilityEap, selectNextItem } from "./utils/cat";
 import {
   LEGACY_CAT_CONFIG,
   needsHighLevelItems,
@@ -13,10 +13,44 @@ import {
 } from "./utils/catConfig";
 import { loadItemBank } from "./utils/data";
 import { shuffleArray } from "./utils/random";
+import {
+  PUBLIC_OBSERVED_RESULT_FIELDS,
+  assertPublicResultFieldsAllowed,
+  buildPublicObservedResult,
+} from "./utils/scoreReportingPolicy";
 
 const TOTAL_ITEMS = LEGACY_CAT_CONFIG.stopping.maximumItems;
 const TEST_LABEL = "筆記版";
 type DownloadStatus = "idle" | "success" | "error";
+
+const PUBLIC_SUMMARY_FIELDS = Object.freeze([
+  ...PUBLIC_OBSERVED_RESULT_FIELDS,
+  "総回答時間（秒）",
+  "平均回答時間（秒）",
+  "A選択数",
+  "B選択数",
+  "C選択数",
+  "D選択数",
+]);
+
+const PUBLIC_RESPONSE_FIELDS = Object.freeze([
+  "問題番号",
+  "項目ID",
+  "単語",
+  "品詞",
+  "レベル",
+  "選択ラベル",
+  "選択回答",
+  "正答",
+  "正誤",
+  "回答値",
+  "回答時刻",
+  "回答時間（秒）",
+  "選択肢A",
+  "選択肢B",
+  "選択肢C",
+  "選択肢D",
+]);
 
 interface ResultSnapshot {
   administered: number[];
@@ -26,8 +60,6 @@ interface ResultSnapshot {
   optionOrders: string[][];
   responseTimes: number[];
   answerTimestamps: string[];
-  theta: number;
-  se: number;
   testStartedAtMs: number | null;
   testEndedAtMs: number | null;
 }
@@ -91,8 +123,6 @@ function App() {
   const [optionOrders, setOptionOrders] = useState<string[][]>([]);
   const [responseTimes, setResponseTimes] = useState<number[]>([]);
   const [answerTimestamps, setAnswerTimestamps] = useState<string[]>([]);
-  const [theta, setTheta] = useState(0);
-  const [se, setSe] = useState(Number.POSITIVE_INFINITY);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [questionStartMs, setQuestionStartMs] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -166,8 +196,6 @@ function App() {
   const correctAnswers = responses.reduce<number>((acc, value) => acc + value, 0);
   const accuracy =
     responses.length > 0 ? (correctAnswers / responses.length) * 100 : 0;
-  const vocabSize = vocabFromTheta(theta);
-
   const handleStart = () => {
     if (loading || itemBank.length === 0) {
       return;
@@ -188,8 +216,6 @@ function App() {
     setOptionOrders([]);
     setResponseTimes([]);
     setAnswerTimestamps([]);
-    setTheta(0);
-    setSe(Number.POSITIVE_INFINITY);
     setCurrentIndex(initialIndex);
     setQuestionStartMs(startedAt);
     setDownloadStatus("idle");
@@ -237,8 +263,6 @@ function App() {
       nextAdministered,
       nextResponses
     );
-    setTheta(estimate.theta);
-    setSe(estimate.se);
 
     const highCount = nextAdministered.filter(
       (idx) =>
@@ -260,8 +284,6 @@ function App() {
       optionOrders: nextOptionOrders,
       responseTimes: nextTimes,
       answerTimestamps: nextAnswerTimestamps,
-      theta: estimate.theta,
-      se: estimate.se,
       testStartedAtMs,
       testEndedAtMs: now,
     };
@@ -303,7 +325,6 @@ function App() {
       snapshot.responses.length > 0
         ? (snapshotCorrectAnswers / snapshot.responses.length) * 100
         : 0;
-    const snapshotVocabSize = vocabFromTheta(snapshot.theta);
     const snapshotTotalTimeSeconds = snapshot.responseTimes.reduce(
       (acc, value) => acc + value,
       0
@@ -342,20 +363,19 @@ function App() {
 
     const summarySheet = [
       {
-        テスト形式: TEST_LABEL,
-        受験者氏名: userName,
-        開始日時: snapshot.testStartedAtMs
-          ? new Date(snapshot.testStartedAtMs).toLocaleString("ja-JP")
-          : "",
-        終了日時: snapshot.testEndedAtMs
-          ? new Date(snapshot.testEndedAtMs).toLocaleString("ja-JP")
-          : createdAt.toLocaleString("ja-JP"),
-        "能力値θ": roundFinite(snapshot.theta, 4),
-        標準誤差: roundFinite(snapshot.se, 4),
-        推定語彙サイズ: Math.round(snapshotVocabSize),
-        総問題数: snapshot.administered.length,
-        正答数: snapshotCorrectAnswers,
-        "正答率（%）": roundFinite(snapshotAccuracy, 1),
+        ...buildPublicObservedResult({
+          testLabel: TEST_LABEL,
+          userName,
+          startedAt: snapshot.testStartedAtMs
+            ? new Date(snapshot.testStartedAtMs).toLocaleString("ja-JP")
+            : "",
+          endedAt: snapshot.testEndedAtMs
+            ? new Date(snapshot.testEndedAtMs).toLocaleString("ja-JP")
+            : createdAt.toLocaleString("ja-JP"),
+          administeredItems: snapshot.administered.length,
+          correctAnswers: snapshotCorrectAnswers,
+          accuracyPercent: roundFinite(snapshotAccuracy, 1),
+        }),
         "総回答時間（秒）": roundFinite(snapshotTotalTimeSeconds, 2),
         "平均回答時間（秒）": roundFinite(snapshotAverageTimeSeconds, 2),
         A選択数: selectedLabelCounts.A,
@@ -364,6 +384,8 @@ function App() {
         D選択数: selectedLabelCounts.D,
       },
     ];
+    assertPublicResultFieldsAllowed(summarySheet, PUBLIC_SUMMARY_FIELDS);
+    assertPublicResultFieldsAllowed(responsesSheet, PUBLIC_RESPONSE_FIELDS);
 
     try {
       const workbook = utils.book_new();
@@ -426,8 +448,6 @@ function App() {
       optionOrders,
       responseTimes,
       answerTimestamps,
-      theta,
-      se,
       testStartedAtMs,
       testEndedAtMs,
     });
@@ -443,8 +463,6 @@ function App() {
     setOptionOrders([]);
     setResponseTimes([]);
     setAnswerTimestamps([]);
-    setTheta(0);
-    setSe(Number.POSITIVE_INFINITY);
     setCurrentIndex(null);
     setQuestionStartMs(null);
     setIsProcessing(false);
@@ -469,9 +487,6 @@ function App() {
     return (
       <ResultsView
         userName={userName}
-        theta={theta}
-        se={se}
-        vocabSize={Math.round(vocabSize)}
         totalItems={administered.length}
         correctAnswers={correctAnswers}
         accuracy={Math.round(accuracy * 10) / 10}

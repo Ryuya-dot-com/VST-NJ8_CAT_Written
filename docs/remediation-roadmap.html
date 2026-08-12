@@ -1034,6 +1034,23 @@
               <a href="../docs/adr/0009-defensive-importance-sampling.md">importance ADR</a>。
             </p>
           </article>
+          <article class="card full">
+            <span class="status done">public latent scores default-deny</span>
+            <h3>未妥当化の数値得点を公開経路から遮断</h3>
+            <p>
+              確認的妥当化を通過した報告ポリシーが存在しないため、受験者画面と自動Excelから
+              theta、標準誤差、0–8000尺度、未妥当化の範囲分類を除去した。内部thetaは項目選択と
+              停止のためだけに維持し、公開結果は実施項目の回答集計に限定する。正答率も適応的に
+              選ばれた項目の記述集計であり、比較可能な能力得点ではないと明示する。
+            </p>
+            <p>
+              <code>latent-score-reporting-default-deny-v1</code> はfeature flagではない。
+              専用テストと静的検証がUI propsとExcelフィールドへの潜在得点の再混入を拒否する。
+              解除には新しいポリシーID、条件付き性能とMonte Carlo誤差の事前固定評価、独立確認、
+              実データ妥当化、音声版のモード固有証拠が必要である。
+              <a href="../docs/adr/0010-public-score-reporting-default-deny.md">公開得点default-deny ADR</a>。
+            </p>
+          </article>
         </div>
       </section>
 
@@ -1084,6 +1101,7 @@
           <article class="card">
             <h3>G5: 公開ゲート</h3>
             <ul class="compact-list">
+              <li>未合格時は潜在得点をdefault-deny</li>
               <li>技術報告と変更履歴を公開</li>
               <li>結果の再現情報を保存</li>
               <li>ロールバック手順を確認</li>
