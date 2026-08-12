@@ -889,7 +889,7 @@
         <p class="callout">
           <strong>再現条件:</strong>
           各セルの反復数、seed、乱数生成器、項目バンク論理・成果物hash、コードcommit、実行環境、除外基準をmanifestへ保存する。
-          SHAは保存バイト列の同一性、離散値は完全一致、連続値は固定された絶対・相対許容差で検査し、これらを妥当性の証明と混同しない。
+          SHAは保存バイト列の同一性に使い、別環境での再計算は事前定義されたゲートと採否が変わらないことを検査する。連続診断値の完全一致自体を妥当性の証明やCIゲートとしない。
           結果を見てから閾値を変更した場合は探索と確認を分け、独立条件で再評価する。
         </p>
         <div class="grid" style="margin-top: 1rem">
@@ -1074,8 +1074,9 @@
             <span class="status done">reproducibility contract separated</span>
             <h3>SHAの役割をバイト同一性に限定</h3>
             <p>
-              異なるOS・CPUで浮動小数点集計の完全同一を要求せず、計画・ソース・保存済み成果物のSHA、
-              seed・試行数・判定など離散値の完全一致、連続値の固定絶対＋相対許容差を別々に検査する。
+              異なるOS・CPUで浮動小数点集計の完全同一を要求せず、計画・ソース・保存済み成果物のSHAと、
+              再計算後も事前定義した候補ID・ゲート・採否が変わらないことを別々に検査する。
+              採否ゲートのない探索成果物には事後的な数値閾値を設けず、成果物同一性と計算手続のunit testを検査する。
               項目バンクはBOM・改行・等価な数値表記を正規化した論理SHAと、配布CSVの成果物SHAを併記する。
               <a href="../docs/adr/0013-reproducibility-verification.md">再現性検証ADR</a>。
             </p>
@@ -1209,7 +1210,7 @@
                 <td>CAT-001</td>
                 <td><span class="status blocker">P0</span> <span class="status done">完了</span></td>
                 <td>再現可能なMonte Carlo harness</td>
-                <td>manifest＋MCSE付き集計表＋SHA/離散/連続を分離した機械判定</td>
+                <td>manifest＋MCSE付き集計表＋SHA同一性/研究判断を分離した機械判定</td>
                 <td>ENG-001/PSY-002</td>
               </tr>
               <tr>
